@@ -1,0 +1,56 @@
+{
+  "name": "backup-app",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist-electron/main/main.js",
+  "scripts": {
+    "dev": "concurrently -n NEXT,ELECTRON -c cyan,yellow \"next dev -p 3002\" \"wait-on http://localhost:3002 && electron .\"",
+    "build": "tsc -p tsconfig.electron.json && next build",
+    "build:electron": "tsc -p tsconfig.electron.json",
+    "dist": "npm run build && electron-builder",
+    "start": "electron .",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit"
+  },
+  "dependencies": {
+    "next": "14.2.35",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zustand": "^5.0.12",
+    "electron-serve": "^3.0.1",
+    "node-cron": "^4.2.1"
+  },
+  "devDependencies": {
+    "electron": "^41.2.0",
+    "electron-builder": "^26.8.1",
+    "typescript": "^5",
+    "@types/node": "^22",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/node-cron": "^3",
+    "tailwindcss": "^3.4.19",
+    "postcss": "^8.4.31",
+    "autoprefixer": "^10.4.27",
+    "concurrently": "^9.2.1",
+    "wait-on": "^9.0.4"
+  },
+  "build": {
+    "appId": "com.backup-app.desktop",
+    "productName": "Backup App",
+    "files": [
+      "dist-electron/**/*",
+      "out/**/*"
+    ],
+    "directories": {
+      "buildResources": "public"
+    },
+    "linux": {
+      "target": "AppImage"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  }
+}
