@@ -1,6 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 import type { RsyncConfig, RsyncProgress, ValidationResult } from '../renderer/lib/types'
+import { DEFAULT_EXCLUSIONS } from '../shared/constants'
 
 export function validatePaths(sourceDir: string, destDir: string): ValidationResult {
   const errors: string[] = []
@@ -53,14 +54,22 @@ export function buildRsyncArgs(config: RsyncConfig): string[] {
     '--verbose',
     '--progress',
     '--stats',
-    '--delete',
-    '--partial',
+    '--checksum',
     '--human-readable',
   ]
 
+  // Default exclusions (always applied)
+  for (const pattern of DEFAULT_EXCLUSIONS) {
+    args.push(`--exclude=${pattern}`)
+  }
+
+  // User-specified exclusions (in addition to defaults)
   if (config.excludePatterns) {
     for (const pattern of config.excludePatterns) {
-      args.push(`--exclude=${pattern}`)
+      // Skip if it's already in defaults
+      if (!DEFAULT_EXCLUSIONS.includes(pattern)) {
+        args.push(`--exclude=${pattern}`)
+      }
     }
   }
 

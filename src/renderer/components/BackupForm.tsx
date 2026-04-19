@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react'
 import type { RsyncConfig, ScheduleConfig, ValidationResult } from '@/lib/types'
 import { getElectronAPI } from '@/lib/electron-mock'
+import { DEFAULT_EXCLUSIONS, EXCLUSION_DESCRIPTIONS } from '@shared/constants'
 
 interface Props {
   initialConfig: RsyncConfig | null
   isRunning: boolean
   onSave: (config: RsyncConfig) => void
   onExecute: (config: RsyncConfig) => void
+  isElectron?: boolean
 }
 
 const DEFAULT_SCHEDULE: ScheduleConfig = {
@@ -37,7 +39,7 @@ function buildCronExpression(schedule: ScheduleConfig): string {
   return schedule.cronExpression
 }
 
-export function BackupForm({ initialConfig, isRunning, onSave, onExecute }: Props) {
+export function BackupForm({ initialConfig, isRunning, onSave, onExecute, isElectron = true }: Props) {
   const [formData, setFormData] = useState<RsyncConfig>(initialConfig ?? DEFAULT_FORM)
   const [excludeRaw, setExcludeRaw] = useState(
     (initialConfig?.excludePatterns ?? DEFAULT_FORM.excludePatterns!).join(', ')
@@ -161,18 +163,49 @@ export function BackupForm({ initialConfig, isRunning, onSave, onExecute }: Prop
       </div>
 
       {/* Exclude Patterns */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Exclude Patterns{' '}
-          <span className="font-normal text-gray-500 dark:text-gray-400">(comma-separated)</span>
-        </label>
-        <input
-          type="text"
-          value={excludeRaw}
-          onChange={(e) => setExcludeRaw(e.target.value)}
-          placeholder=".git, node_modules, *.log"
-          className={`${inputCls} font-mono text-sm`}
-        />
+      <div className="space-y-3">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            Exclusion Patterns
+          </label>
+
+          {/* Default exclusions (read-only) */}
+          <div className="mb-3">
+            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
+              🔒 Always Excluded (default):
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {DEFAULT_EXCLUSIONS.map((pattern: string) => (
+                <div
+                  key={pattern}
+                  className="px-3 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded text-sm"
+                >
+                  <div className="font-mono text-gray-900 dark:text-gray-100">{pattern}</div>
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                    {EXCLUSION_DESCRIPTIONS[pattern]}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom exclusions (editable) */}
+          <div>
+            <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">
+              ➕ Additional Custom Exclusions (comma-separated):
+            </label>
+            <input
+              type="text"
+              value={excludeRaw}
+              onChange={(e) => setExcludeRaw(e.target.value)}
+              placeholder="e.g. .idea, .vscode, __pycache__"
+              className={`${inputCls} font-mono text-sm`}
+            />
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              These are added to the default exclusions above
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Validation result */}
@@ -304,8 +337,9 @@ export function BackupForm({ initialConfig, isRunning, onSave, onExecute }: Prop
         <button
           type="button"
           onClick={handleExecute}
-          disabled={isRunning || !isValid}
-          className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:bg-gray-400 transition"
+          disabled={isRunning || !isValid || !isElectron}
+          title={!isElectron ? 'Only available in desktop app' : ''}
+          className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
         >
           {isRunning ? 'Backup Running...' : 'Execute Backup Now'}
         </button>

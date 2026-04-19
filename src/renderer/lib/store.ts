@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { BackupRecord, RsyncConfig, RsyncProgress } from './types'
+import type { BackupRecord, RsyncConfig, RsyncProgress, ScheduleRecord } from './types'
 import { getElectronAPI } from './electron-mock'
 
 interface BackupStore {
@@ -10,6 +10,11 @@ interface BackupStore {
   progress: RsyncProgress | null
 
   history: BackupRecord[]
+
+  schedules: ScheduleRecord[]
+  loadSchedules: () => Promise<void>
+  toggleSchedule: (id: string, enabled: boolean) => Promise<void>
+  deleteSchedule: (id: string) => Promise<void>
 
   startBackup: () => Promise<void>
   cancelBackup: () => Promise<void>
@@ -35,6 +40,31 @@ export const useBackupStore = create<BackupStore>((set, get) => ({
   progress: null,
 
   history: [],
+
+  schedules: [],
+
+  loadSchedules: async () => {
+    const schedules = await getElectronAPI().backup.getSchedules()
+    set({ schedules })
+  },
+
+  toggleSchedule: async (id, enabled) => {
+    const updated = await getElectronAPI().backup.updateSchedule(id, { enabled })
+    if (updated) {
+      set((state) => ({
+        schedules: state.schedules.map((s) => (s.id === id ? updated : s)),
+      }))
+    }
+  },
+
+  deleteSchedule: async (id) => {
+    const result = await getElectronAPI().backup.deleteSchedule(id)
+    if (result.success) {
+      set((state) => ({
+        schedules: state.schedules.filter((s) => s.id !== id),
+      }))
+    }
+  },
 
   startBackup: async () => {
     const { config } = get()

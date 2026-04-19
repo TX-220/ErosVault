@@ -1,4 +1,26 @@
-import type { RsyncConfig, BackupRecord, RsyncResult, RsyncProgress, ValidationResult } from './types'
+import type { RsyncConfig, BackupRecord, RsyncResult, RsyncProgress, ValidationResult, ScheduleRecord, ScheduleFrequency } from './types'
+
+// In-memory schedule store for mock mode
+let mockSchedules: ScheduleRecord[] = [
+  {
+    id: 'mock-sched-1',
+    backupName: 'Mock Backup',
+    cronExpression: '0 2 * * *',
+    enabled: true,
+    frequency: 'daily',
+    time: '02:00',
+    dayOfWeek: 0,
+    backupConfig: {
+      sourceDir: '/mock/source',
+      destDir: '/mock/dest',
+      backupName: 'Mock Backup',
+    },
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    lastRun: new Date(Date.now() - 3600000).toISOString(),
+    lastStatus: 'complete',
+    nextRun: new Date(Date.now() + 82800000).toISOString(),
+  },
+]
 
 // Mock implementation for browser dev mode (when not in Electron)
 const mockAPI = {
@@ -49,8 +71,36 @@ const mockAPI = {
       enabled: boolean
       cronExpression: string
       backupConfig: RsyncConfig
+      frequency?: ScheduleFrequency
+      time?: string
+      dayOfWeek?: number
     }) => {
       return { success: true, message: '(Mock) Schedule configured' }
+    },
+
+    getSchedules: async (): Promise<ScheduleRecord[]> => {
+      await new Promise((r) => setTimeout(r, 200))
+      return [...mockSchedules]
+    },
+
+    updateSchedule: async (
+      id: string,
+      updates: Partial<Pick<ScheduleRecord, 'enabled' | 'cronExpression' | 'frequency' | 'time' | 'dayOfWeek'>>
+    ): Promise<ScheduleRecord | null> => {
+      await new Promise((r) => setTimeout(r, 200))
+      const idx = mockSchedules.findIndex((s) => s.id === id)
+      if (idx === -1) return null
+      const updated = { ...mockSchedules[idx], ...updates }
+      mockSchedules = mockSchedules.map((s) => (s.id === id ? updated : s))
+      return updated
+    },
+
+    deleteSchedule: async (id: string): Promise<{ success: boolean }> => {
+      await new Promise((r) => setTimeout(r, 200))
+      const exists = mockSchedules.some((s) => s.id === id)
+      if (!exists) return { success: false }
+      mockSchedules = mockSchedules.filter((s) => s.id !== id)
+      return { success: true }
     },
 
     onProgress: (handler: (data: RsyncProgress) => void) => {

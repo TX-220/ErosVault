@@ -1,6 +1,8 @@
+export type ScheduleFrequency = 'daily' | 'weekly' | 'monthly' | 'custom'
+
 export interface ScheduleConfig {
   enabled: boolean
-  frequency: 'daily' | 'weekly' | 'custom'
+  frequency: ScheduleFrequency
   time: string        // "HH:MM" for daily/weekly
   dayOfWeek: number   // 0 = Sun … 6 = Sat (used for weekly)
   cronExpression: string // computed for daily/weekly, user-entered for custom
@@ -43,4 +45,19 @@ export interface BackupRecord extends RsyncResult {
 export interface ValidationResult {
   valid: boolean
   errors: string[]
+}
+
+export interface ScheduleRecord {
+  id: string
+  backupName: string
+  cronExpression: string
+  enabled: boolean
+  frequency: ScheduleFrequency
+  time: string
+  dayOfWeek: number
+  backupConfig: RsyncConfig
+  createdAt: string
+  lastRun?: string
+  lastStatus?: 'complete' | 'error'
+  nextRun?: string
 }

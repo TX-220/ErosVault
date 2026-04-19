@@ -31,6 +31,7 @@ function useTheme() {
 const NAV_LINKS = [
   { href: '/', label: 'Dashboard' },
   { href: '/configure', label: 'Configure' },
+  { href: '/schedules', label: 'Schedules' },
   { href: '/history', label: 'History' },
 ]
 
@@ -44,7 +45,7 @@ export function Layout({ children }: Props) {
       <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-            Backup Application
+            Replicant
           </h1>
           <button
             onClick={toggle}
