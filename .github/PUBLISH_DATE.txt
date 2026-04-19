@@ -1,0 +1,5 @@
+Published: 2026-04-19
+Repository: https://github.com/TX-220/replicant
+Status: Production Ready
+
+This file triggers cache refresh on GitHub.
