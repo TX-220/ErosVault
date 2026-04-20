@@ -51,6 +51,16 @@ pnpm dev
 pnpm dist
 ```
 
+## Quick Start
+
+After installation, launch the app with a single command:
+
+```bash
+replicant
+```
+
+That's it. The Electron desktop window opens with the full backup interface ready to use.
+
 ## Usage
 
 ### 1. Configure Backup
