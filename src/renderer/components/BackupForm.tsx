@@ -189,6 +189,17 @@ export function BackupForm({ initialConfig, isRunning, onSave, onExecute, isElec
             </div>
           </div>
 
+          {/* Python venv note */}
+          <div className="my-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded text-sm">
+            <p className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-1">
+              💡 Python Virtual Environments
+            </p>
+            <p className="text-xs text-blue-800 dark:text-blue-200">
+              Virtual environments (venv, .venv, env) are excluded by default. After restoring a backup, reinstall with:<br/>
+              <code className="font-mono bg-blue-100 dark:bg-blue-800 px-1 rounded">python -m venv venv && pip install -r requirements.txt</code>
+            </p>
+          </div>
+
           {/* Custom exclusions (editable) */}
           <div>
             <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">
@@ -198,7 +209,7 @@ export function BackupForm({ initialConfig, isRunning, onSave, onExecute, isElec
               type="text"
               value={excludeRaw}
               onChange={(e) => setExcludeRaw(e.target.value)}
-              placeholder="e.g. .idea, .vscode, __pycache__"
+              placeholder="e.g. .idea, .vscode, dist"
               className={`${inputCls} font-mono text-sm`}
             />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">

@@ -113,6 +113,18 @@ replicant/
 └── next.config.js         # Next.js configuration
 ```
 
+## Smart Exclusions
+
+### Default Patterns
+
+Replicant automatically excludes patterns that shouldn't be backed up:
+- **Node.js**: `node_modules/` (reinstall with `npm install`)
+- **Python**: `venv/`, `.venv/`, `env/`, `__pycache__/`, `*.pyc` (reinstall with `python -m venv venv && pip install -r requirements.txt`)
+- **Build output**: `.next/`, `dist/`, `build/`
+- **System files**: `.git/`, `.DS_Store`, `.env.local`, `*.log`, `.cache/`
+
+**Note**: Python virtual environments are excluded by default. They regenerate automatically after backup restore — just reinstall dependencies with `pip install -r requirements.txt`.
+
 ## Development
 
 ### Build for Development
