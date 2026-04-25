@@ -132,9 +132,13 @@ pnpm build                    # Compile TS + build Next.js
 pnpm dist                     # Package Electron app
 ```
 
+## Author
+
+TX-220 — Concept, design, direction. Claude (Anthropic) — Implementation. Claude Code & Claude Desktop — Development. Gemini (UI/styling) — *dendrite, nodebook only*.
+
 ## License
 
-MIT © 2026
+MIT — See [LICENSE](LICENSE) file for details.
 
 ---
 
