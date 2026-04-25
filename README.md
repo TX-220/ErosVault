@@ -134,7 +134,7 @@ pnpm dist                     # Package Electron app
 
 ## Author
 
-TX-220 — Concept, design, direction. Claude (Anthropic) — Implementation. Claude Code & Claude Desktop — Development. Gemini (UI/styling) — *dendrite, nodebook only*.
+TX-220 — Concept, design, direction. Claude (Anthropic) — Implementation. Claude Code & — Development.
 
 ## License
 
