@@ -146,7 +146,7 @@ pnpm dist                     # Package Electron app
 
 ## Author
 
-TX-220 — Concept, design, direction. Claude (Anthropic) — Implementation. Claude Code & — Development.
+TX-220 — Concept, design, direction. Claude (Anthropic) — Implementation. Claude Code — Development.
 
 ## License
 
