@@ -119,7 +119,7 @@ replicant/
 
 Replicant automatically excludes patterns that shouldn't be backed up:
 - **Node.js**: `node_modules/` (reinstall with `npm install`)
-- **Python**: `venv/`, `.venv/`, `env/`, `__pycache__/`, `*.pyc` (reinstall with `python -m venv venv && pip install -r requirements.txt`)
+- **Python**: `venv/`, `.venv/`, `env/`, `__pycache__/`, `*.pyc` (reinstall with `python -m venv`)
 - **Build output**: `.next/`, `dist/`, `build/`
 - **System files**: `.git/`, `.DS_Store`, `.env.local`, `*.log`, `.cache/`
 
@@ -155,3 +155,5 @@ MIT — See [LICENSE](LICENSE) file for details.
 ---
 
 Built with ⚡ [Claude Code](https://claude.com/claude-code)
+
+This was an experimental project developed with Claude (Haiku). Later improved significantly with Grok.
