@@ -11,6 +11,7 @@ export function ProgressBar({ progress, isRunning, onCancel }: Props) {
 
   const isComplete = progress?.status === 'complete'
   const isError = progress?.status === 'error'
+  const isCancelled = progress?.status === 'cancelled'
   const isSyncing = progress?.status === 'syncing'
 
   return (
@@ -21,6 +22,8 @@ export function ProgressBar({ progress, isRunning, onCancel }: Props) {
             ? 'Backup Complete'
             : isError
             ? 'Backup Failed'
+            : isCancelled
+            ? 'Backup Cancelled'
             : progress?.status === 'validating'
             ? 'Validating...'
             : 'Backup Running'}
@@ -43,6 +46,8 @@ export function ProgressBar({ progress, isRunning, onCancel }: Props) {
           <div className="h-full bg-green-500 rounded-full w-full" />
         ) : isError ? (
           <div className="h-full bg-red-500 rounded-full w-full" />
+        ) : isCancelled ? (
+          <div className="h-full bg-yellow-500 rounded-full w-full" />
         ) : (
           <div className="h-full bg-blue-400 rounded-full animate-pulse w-1/3" />
         )}

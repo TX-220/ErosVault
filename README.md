@@ -30,8 +30,8 @@ A minimal, elegant desktop backup application that uses rsync for reliable incre
 ## Installation
 
 ### Requirements
-- Node.js 18+ (recommended 20.x)
-- pnpm (or npm/yarn)
+- Node.js 22.12+ (required by Electron 41)
+- pnpm (recommended; CI uses pnpm)
 - rsync (included on macOS/Linux; Windows bundled with app)
 
 ### Setup
@@ -144,9 +144,20 @@ pnpm build                    # Compile TS + build Next.js
 pnpm dist                     # Package Electron app
 ```
 
+## Recent Updates
+
+**2026-07-05** — Debug and improvements with support from the [Grok team](https://x.ai).
+
+- Restored scheduled backups after app restart
+- Strengthened path validation (same path, directory checks, overlap guards)
+- Added config persistence (`~/.backup-app/config.json`) and atomic history writes
+- Wired scheduled-backup completion events to the UI
+- Fixed CI (Node 22, pnpm lockfile, security-check job)
+- Improved Linux dev launch (`electron --no-sandbox`, polling file watcher)
+
 ## Author
 
-TX-220 — Concept, design, direction. Claude (Anthropic) — Implementation. [Claude Code](https://claude.com/claude-code) — Development.
+TX-220 — Concept, design, direction. Claude (Anthropic) — Implementation. [Claude Code](https://claude.com/claude-code) & [Grok](https://x.ai) — Development and debug.
 
 ## License
 
@@ -156,4 +167,4 @@ MIT — See [LICENSE](LICENSE) file for details.
 
 Built with ⚡ [Claude Code](https://claude.com/claude-code)
 
-This was an experimental project developed with Claude (Haiku). Later improved significantly with Grok.
+This was an experimental project developed with Claude (Haiku). Later improved significantly with [Grok](https://x.ai).

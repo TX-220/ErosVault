@@ -36,6 +36,7 @@ function buildCronExpression(schedule: ScheduleConfig): string {
   const m = parseInt(minutes ?? '0')
   if (schedule.frequency === 'daily') return `${m} ${h} * * *`
   if (schedule.frequency === 'weekly') return `${m} ${h} * * ${schedule.dayOfWeek}`
+  if (schedule.frequency === 'monthly') return `${m} ${h} 1 * *`
   return schedule.cronExpression
 }
 
@@ -268,11 +269,14 @@ export function BackupForm({ initialConfig, isRunning, onSave, onExecute, isElec
               >
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
                 <option value="custom">Custom cron</option>
               </select>
 
               {/* Time picker for daily / weekly */}
-              {(schedule.frequency === 'daily' || schedule.frequency === 'weekly') && (
+              {(schedule.frequency === 'daily' ||
+                schedule.frequency === 'weekly' ||
+                schedule.frequency === 'monthly') && (
                 <>
                   <span className="text-sm text-gray-500 dark:text-gray-400">@</span>
                   <input

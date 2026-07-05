@@ -12,7 +12,7 @@ export default function SchedulesPage() {
 
   useEffect(() => {
     loadSchedules()
-  }, [])
+  }, [loadSchedules])
 
   function handleToggle(id: string, enabled: boolean) {
     toggleSchedule(id, enabled)

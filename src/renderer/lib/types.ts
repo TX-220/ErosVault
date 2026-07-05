@@ -17,7 +17,7 @@ export interface RsyncConfig {
 }
 
 export interface RsyncProgress {
-  status: 'validating' | 'syncing' | 'complete' | 'error'
+  status: 'validating' | 'syncing' | 'complete' | 'error' | 'cancelled'
   filesTransferred?: number
   fileSize?: number
   speed?: string
@@ -27,7 +27,7 @@ export interface RsyncProgress {
 }
 
 export interface RsyncResult {
-  status: 'complete' | 'error'
+  status: 'complete' | 'error' | 'cancelled'
   message: string
   timestamp: string
   filesChanged: number

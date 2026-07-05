@@ -1,6 +1,15 @@
-import type { RsyncConfig, BackupRecord, RsyncResult, RsyncProgress, ValidationResult, ScheduleRecord, ScheduleFrequency } from './types'
+import type {
+  RsyncConfig,
+  BackupRecord,
+  RsyncResult,
+  RsyncProgress,
+  ValidationResult,
+  ScheduleRecord,
+  ScheduleFrequency,
+} from './types'
 
-// In-memory schedule store for mock mode
+let mockConfig: RsyncConfig | null = null
+
 let mockSchedules: ScheduleRecord[] = [
   {
     id: 'mock-sched-1',
@@ -22,7 +31,6 @@ let mockSchedules: ScheduleRecord[] = [
   },
 ]
 
-// Mock implementation for browser dev mode (when not in Electron)
 const mockAPI = {
   backup: {
     execute: async (config: RsyncConfig): Promise<RsyncResult> => {
@@ -63,7 +71,16 @@ const mockAPI = {
       ]
     },
 
-    cancel: async (backupName: string): Promise<{ success: boolean }> => {
+    getConfig: async (): Promise<RsyncConfig | null> => {
+      return mockConfig
+    },
+
+    saveConfig: async (config: RsyncConfig): Promise<{ success: boolean; message?: string }> => {
+      mockConfig = config
+      return { success: true }
+    },
+
+    cancel: async (_backupName: string): Promise<{ success: boolean }> => {
       return { success: true }
     },
 
@@ -85,7 +102,9 @@ const mockAPI = {
 
     updateSchedule: async (
       id: string,
-      updates: Partial<Pick<ScheduleRecord, 'enabled' | 'cronExpression' | 'frequency' | 'time' | 'dayOfWeek'>>
+      updates: Partial<
+        Pick<ScheduleRecord, 'enabled' | 'cronExpression' | 'frequency' | 'time' | 'dayOfWeek' | 'backupConfig'>
+      >
     ): Promise<ScheduleRecord | null> => {
       await new Promise((r) => setTimeout(r, 200))
       const idx = mockSchedules.findIndex((s) => s.id === id)
@@ -104,7 +123,6 @@ const mockAPI = {
     },
 
     onProgress: (handler: (data: RsyncProgress) => void) => {
-      // Simulate progress events
       const timer = setInterval(() => {
         handler({
           status: 'syncing',
@@ -116,10 +134,13 @@ const mockAPI = {
       }, 1000)
       return () => clearInterval(timer)
     },
+
+    onScheduledResult: (_handler: (data: { backupName: string; status: 'complete' | 'error'; message?: string; filesChanged?: number }) => void) => {
+      return () => {}
+    },
   },
 }
 
-// Get the real or mock API
 export function getElectronAPI() {
   if (typeof window !== 'undefined' && (window as any).electronAPI) {
     return (window as any).electronAPI

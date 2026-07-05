@@ -2,30 +2,38 @@ import fs from 'fs'
 import path from 'path'
 import type { RsyncConfig, RsyncProgress, ValidationResult } from '../renderer/lib/types'
 import { DEFAULT_EXCLUSIONS } from '../shared/constants'
+import { sanitizeExcludePatterns } from '../shared/validation'
 
 export function validatePaths(sourceDir: string, destDir: string): ValidationResult {
   const errors: string[] = []
 
-  // Source must exist and be readable
+  // Source must exist, be readable, and be a directory
   if (!fs.existsSync(sourceDir)) {
     errors.push(`Source directory does not exist: ${sourceDir}`)
   } else {
     try {
       fs.accessSync(sourceDir, fs.constants.R_OK)
+      const stat = fs.statSync(sourceDir)
+      if (!stat.isDirectory()) {
+        errors.push(`Source path is not a directory: ${sourceDir}`)
+      }
     } catch {
       errors.push(`Source directory is not readable: ${sourceDir}`)
     }
   }
 
-  // Dest must exist (or its parent must) and be writable
+  // Dest must exist (or its parent must) and be writable; existing dest must be a directory
   if (fs.existsSync(destDir)) {
     try {
       fs.accessSync(destDir, fs.constants.W_OK)
+      const stat = fs.statSync(destDir)
+      if (!stat.isDirectory()) {
+        errors.push(`Destination path is not a directory: ${destDir}`)
+      }
     } catch {
       errors.push(`Destination directory is not writable: ${destDir}`)
     }
   } else {
-    // Validate parent is writable so rsync can create destDir
     const parent = path.dirname(destDir)
     if (!fs.existsSync(parent)) {
       errors.push(`Destination parent directory does not exist: ${parent}`)
@@ -38,11 +46,19 @@ export function validatePaths(sourceDir: string, destDir: string): ValidationRes
     }
   }
 
-  // Guard against source being a prefix of dest
   const normalizedSource = path.resolve(sourceDir)
   const normalizedDest = path.resolve(destDir)
+
+  if (normalizedSource === normalizedDest) {
+    errors.push('Source and destination directories cannot be the same')
+  }
+
   if (normalizedDest.startsWith(normalizedSource + path.sep)) {
     errors.push('Destination directory cannot be inside source directory')
+  }
+
+  if (normalizedSource.startsWith(normalizedDest + path.sep)) {
+    errors.push('Source directory cannot be inside destination directory')
   }
 
   return { valid: errors.length === 0, errors }
@@ -58,29 +74,22 @@ export function buildRsyncArgs(config: RsyncConfig): string[] {
     '--human-readable',
   ]
 
-  // Default exclusions (always applied)
   for (const pattern of DEFAULT_EXCLUSIONS) {
     args.push(`--exclude=${pattern}`)
   }
 
-  // User-specified exclusions (in addition to defaults)
-  if (config.excludePatterns) {
-    for (const pattern of config.excludePatterns) {
-      // Skip if it's already in defaults
-      if (!DEFAULT_EXCLUSIONS.includes(pattern)) {
-        args.push(`--exclude=${pattern}`)
-      }
+  const { patterns: userPatterns } = sanitizeExcludePatterns(config.excludePatterns ?? [])
+  for (const pattern of userPatterns) {
+    if (!DEFAULT_EXCLUSIONS.includes(pattern)) {
+      args.push(`--exclude=${pattern}`)
     }
   }
 
-  // Trailing slash semantics: copies CONTENTS of sourceDir into destDir
   const source = config.sourceDir.endsWith('/') ? config.sourceDir : `${config.sourceDir}/`
-
   args.push(source, config.destDir)
   return args
 }
 
-// Regex patterns for rsync output parsing
 const PROGRESS_RE =
   /^\s*([\d,]+)\s+(\d+)%\s+([\d.]+\w+\/s)\s+(\d+:\d+:\d+)\s+\(xfr#(\d+),\s*to-chk=(\d+)\/(\d+)\)/
 const FILES_TRANSFERRED_RE = /^Number of regular files transferred:\s*([\d,]+)/
@@ -114,7 +123,6 @@ export function parseStats(output: string): { filesChanged: number; bytesTransfe
 }
 
 export function trackFilename(line: string): string | null {
-  // A filename line has no leading whitespace and isn't an rsync header
   if (line.startsWith(' ') || RSYNC_HEADER_RE.test(line.trim())) {
     return null
   }

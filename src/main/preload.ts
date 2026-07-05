@@ -9,11 +9,20 @@ import type {
   ScheduleFrequency,
 } from '../renderer/lib/types'
 
+export interface ScheduledResult {
+  backupName: string
+  status: 'complete' | 'error'
+  message?: string
+  filesChanged?: number
+}
+
 export interface ElectronAPI {
   backup: {
     execute: (config: RsyncConfig) => Promise<RsyncResult>
     validatePaths: (sourceDir: string, destDir: string) => Promise<ValidationResult>
     getHistory: () => Promise<BackupRecord[]>
+    getConfig: () => Promise<RsyncConfig | null>
+    saveConfig: (config: RsyncConfig) => Promise<{ success: boolean; message?: string }>
     cancel: (backupName: string) => Promise<{ success: boolean }>
     schedule: (req: {
       enabled: boolean
@@ -26,10 +35,13 @@ export interface ElectronAPI {
     getSchedules: () => Promise<ScheduleRecord[]>
     updateSchedule: (
       id: string,
-      updates: Partial<Pick<ScheduleRecord, 'enabled' | 'cronExpression' | 'frequency' | 'time' | 'dayOfWeek'>>
+      updates: Partial<
+        Pick<ScheduleRecord, 'enabled' | 'cronExpression' | 'frequency' | 'time' | 'dayOfWeek' | 'backupConfig'>
+      >
     ) => Promise<ScheduleRecord | null>
     deleteSchedule: (id: string) => Promise<{ success: boolean }>
     onProgress: (handler: (data: RsyncProgress) => void) => () => void
+    onScheduledResult: (handler: (data: ScheduledResult) => void) => () => void
   }
 }
 
@@ -41,6 +53,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('backup:validate-paths', { sourceDir, destDir }),
 
     getHistory: () => ipcRenderer.invoke('backup:get-history'),
+
+    getConfig: () => ipcRenderer.invoke('backup:get-config'),
+
+    saveConfig: (config: RsyncConfig) => ipcRenderer.invoke('backup:save-config', config),
 
     cancel: (backupName: string) => ipcRenderer.invoke('backup:cancel', backupName),
 
@@ -57,7 +73,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     updateSchedule: (
       id: string,
-      updates: Partial<Pick<ScheduleRecord, 'enabled' | 'cronExpression' | 'frequency' | 'time' | 'dayOfWeek'>>
+      updates: Partial<
+        Pick<ScheduleRecord, 'enabled' | 'cronExpression' | 'frequency' | 'time' | 'dayOfWeek' | 'backupConfig'>
+      >
     ) => ipcRenderer.invoke('backup:update-schedule', { id, updates }),
 
     deleteSchedule: (id: string) => ipcRenderer.invoke('backup:delete-schedule', id),
@@ -66,6 +84,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
       const listener = (_event: Electron.IpcRendererEvent, data: RsyncProgress) => handler(data)
       ipcRenderer.on('backup:progress', listener)
       return () => ipcRenderer.removeListener('backup:progress', listener)
+    },
+
+    onScheduledResult: (handler: (data: ScheduledResult) => void) => {
+      const listener = (_event: Electron.IpcRendererEvent, data: ScheduledResult) => handler(data)
+      ipcRenderer.on('backup:scheduled-result', listener)
+      return () => ipcRenderer.removeListener('backup:scheduled-result', listener)
     },
   },
 } satisfies ElectronAPI)

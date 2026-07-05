@@ -5,9 +5,11 @@ import { getElectronAPI } from './electron-mock'
 interface BackupStore {
   config: RsyncConfig | null
   setConfig: (config: RsyncConfig) => Promise<void>
+  loadConfig: () => Promise<void>
 
   isRunning: boolean
   progress: RsyncProgress | null
+  scheduledNotification: string | null
 
   history: BackupRecord[]
 
@@ -19,25 +21,39 @@ interface BackupStore {
   startBackup: () => Promise<void>
   cancelBackup: () => Promise<void>
   loadHistory: () => Promise<void>
+  initListeners: () => () => void
 }
 
 export const useBackupStore = create<BackupStore>((set, get) => ({
   config: null,
 
+  loadConfig: async () => {
+    const config = await getElectronAPI().backup.getConfig()
+    if (config) set({ config })
+  },
+
   setConfig: async (config) => {
+    const saveResult = await getElectronAPI().backup.saveConfig(config)
+    if (!saveResult.success) {
+      throw new Error(saveResult.message ?? 'Failed to save configuration')
+    }
     set({ config })
-    // Apply schedule change immediately whenever config is saved
+
     if (config.schedule) {
       await getElectronAPI().backup.schedule({
         enabled: config.schedule.enabled,
         cronExpression: config.schedule.cronExpression,
         backupConfig: config,
+        frequency: config.schedule.frequency,
+        time: config.schedule.time,
+        dayOfWeek: config.schedule.dayOfWeek,
       })
     }
   },
 
   isRunning: false,
   progress: null,
+  scheduledNotification: null,
 
   history: [],
 
@@ -70,7 +86,6 @@ export const useBackupStore = create<BackupStore>((set, get) => ({
     const { config } = get()
     if (!config) return
 
-    // Register progress listener BEFORE invoke (prevents race condition)
     const cleanup = getElectronAPI().backup.onProgress((data: RsyncProgress) => {
       set({ progress: data })
     })
@@ -96,5 +111,27 @@ export const useBackupStore = create<BackupStore>((set, get) => ({
   loadHistory: async () => {
     const history = await getElectronAPI().backup.getHistory()
     set({ history })
+  },
+
+  initListeners: () => {
+    const api = getElectronAPI().backup
+    if (!api.onScheduledResult) return () => {}
+
+    const cleanup = api.onScheduledResult((data: {
+      backupName: string
+      status: 'complete' | 'error'
+      message?: string
+      filesChanged?: number
+    }) => {
+      const message =
+        data.status === 'complete'
+          ? `Scheduled backup "${data.backupName}" completed (${data.filesChanged ?? 0} files)`
+          : `Scheduled backup "${data.backupName}" failed: ${data.message ?? 'unknown error'}`
+      set({ scheduledNotification: message })
+      get().loadSchedules()
+      get().loadHistory()
+    })
+
+    return cleanup
   },
 }))

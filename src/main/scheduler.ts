@@ -2,28 +2,24 @@ import cron, { ScheduledTask } from 'node-cron'
 import { CronExpressionParser } from 'cron-parser'
 import { BrowserWindow } from 'electron'
 import type { RsyncConfig, ScheduleRecord } from '../renderer/lib/types'
-import { validatePaths, buildRsyncArgs, parseLine, parseStats, trackFilename } from '../utils/rsync'
-import { spawn } from 'child_process'
-import fs from 'fs'
-import path from 'path'
-import os from 'os'
+import { validatePaths } from '../utils/rsync'
+import {
+  appendHistory,
+  readSchedulesFile,
+  writeSchedulesFile,
+  writeSchedulesFileSync,
+} from './persistence'
+import { tryAcquireRun, releaseRun } from './run-registry'
+import { spawnRsyncProcess, attachRsyncListeners } from './rsync-process'
 
-const HISTORY_DIR = path.join(os.homedir(), '.backup-app')
-const HISTORY_FILE = path.join(HISTORY_DIR, 'history.json')
-const SCHEDULES_FILE = path.join(HISTORY_DIR, 'schedules.json')
+const activeTasks = new Map<string, ScheduledTask>()
 
 function readSchedules(): ScheduleRecord[] {
-  if (!fs.existsSync(SCHEDULES_FILE)) return []
-  try {
-    return JSON.parse(fs.readFileSync(SCHEDULES_FILE, 'utf-8')) as ScheduleRecord[]
-  } catch {
-    return []
-  }
+  return readSchedulesFile<ScheduleRecord>()
 }
 
 function writeSchedules(schedules: ScheduleRecord[]): void {
-  ensureHistoryDir()
-  fs.writeFileSync(SCHEDULES_FILE, JSON.stringify(schedules, null, 2), 'utf-8')
+  writeSchedulesFileSync(schedules)
 }
 
 function getNextRun(cronExpression: string): string | undefined {
@@ -35,28 +31,28 @@ function getNextRun(cronExpression: string): string | undefined {
   }
 }
 
-function ensureHistoryDir(): void {
-  if (!fs.existsSync(HISTORY_DIR)) {
-    fs.mkdirSync(HISTORY_DIR, { recursive: true })
+function registerCronTask(backupName: string, cronExpression: string, backupConfig: RsyncConfig): void {
+  const existing = activeTasks.get(backupName)
+  if (existing) {
+    existing.stop()
+    activeTasks.delete(backupName)
   }
+
+  const task = cron.schedule(cronExpression, () => {
+    void runScheduledBackup(backupConfig)
+  })
+  activeTasks.set(backupName, task)
 }
 
-function appendHistory(record: object): void {
-  ensureHistoryDir()
-  let history: object[] = []
-  if (fs.existsSync(HISTORY_FILE)) {
-    try {
-      history = JSON.parse(fs.readFileSync(HISTORY_FILE, 'utf-8'))
-    } catch {
-      history = []
+export function restoreSchedulesOnStartup(): void {
+  const schedules = readSchedules()
+  for (const record of schedules) {
+    if (record.enabled && cron.validate(record.cronExpression)) {
+      registerCronTask(record.backupName, record.cronExpression, record.backupConfig)
+      console.log(`[scheduler] Restored schedule for "${record.backupName}": ${record.cronExpression}`)
     }
   }
-  history.unshift(record)
-  fs.writeFileSync(HISTORY_FILE, JSON.stringify(history.slice(0, 500), null, 2), 'utf-8')
 }
-
-// Map of scheduleId → cron task (allows stopping individual schedules)
-const activeTasks = new Map<string, ScheduledTask>()
 
 export interface ScheduleRequest {
   enabled: boolean
@@ -76,7 +72,6 @@ export interface ScheduleResponse {
 export function setSchedule(req: ScheduleRequest): ScheduleResponse {
   const scheduleId = req.backupConfig.backupName
 
-  // Stop existing cron task for this backup name
   const existing = activeTasks.get(scheduleId)
   if (existing) {
     existing.stop()
@@ -87,7 +82,6 @@ export function setSchedule(req: ScheduleRequest): ScheduleResponse {
   const existingRecord = schedules.find((s) => s.backupName === scheduleId)
 
   if (!req.enabled) {
-    // Update persisted record to disabled if it exists
     if (existingRecord) {
       const updated = schedules.map((s) =>
         s.backupName === scheduleId ? { ...s, enabled: false, nextRun: undefined } : s
@@ -109,10 +103,7 @@ export function setSchedule(req: ScheduleRequest): ScheduleResponse {
     }
   }
 
-  const task = cron.schedule(req.cronExpression, () => {
-    runScheduledBackup(req.backupConfig)
-  })
-  activeTasks.set(scheduleId, task)
+  registerCronTask(scheduleId, req.cronExpression, req.backupConfig)
 
   const nextRun = getNextRun(req.cronExpression)
   const now = new Date().toISOString()
@@ -159,17 +150,18 @@ export function getSchedules(): ScheduleRecord[] {
 
 export function updateSchedule(
   id: string,
-  updates: Partial<Pick<ScheduleRecord, 'enabled' | 'cronExpression' | 'frequency' | 'time' | 'dayOfWeek'>>
+  updates: Partial<
+    Pick<ScheduleRecord, 'enabled' | 'cronExpression' | 'frequency' | 'time' | 'dayOfWeek' | 'backupConfig'>
+  >
 ): ScheduleRecord | null {
   const schedules = readSchedules()
   const idx = schedules.findIndex((s) => s.id === id)
   if (idx === -1) return null
 
   const existing = schedules[idx]
-
-  // If toggling enabled state or changing cron expression, restart cron task
   const cronExpr = updates.cronExpression ?? existing.cronExpression
   const enabled = updates.enabled ?? existing.enabled
+  const backupConfig = updates.backupConfig ?? existing.backupConfig
 
   const old = activeTasks.get(existing.backupName)
   if (old) {
@@ -180,10 +172,7 @@ export function updateSchedule(
   let nextRun: string | undefined
   if (enabled) {
     if (!cron.validate(cronExpr)) return null
-    const task = cron.schedule(cronExpr, () => {
-      runScheduledBackup(existing.backupConfig)
-    })
-    activeTasks.set(existing.backupName, task)
+    registerCronTask(existing.backupName, cronExpr, backupConfig)
     nextRun = getNextRun(cronExpr)
   }
 
@@ -192,6 +181,7 @@ export function updateSchedule(
     ...updates,
     cronExpression: cronExpr,
     enabled,
+    backupConfig,
     nextRun,
   }
   schedules[idx] = updated
@@ -221,149 +211,131 @@ export function stopAllSchedules(): void {
   activeTasks.clear()
 }
 
+async function updateScheduleAfterRun(
+  backupName: string,
+  timestamp: string,
+  runStatus: 'complete' | 'error'
+): Promise<void> {
+  const schedules = readSchedules()
+  const schedIdx = schedules.findIndex((s) => s.backupName === backupName)
+  if (schedIdx === -1) return
+
+  schedules[schedIdx] = {
+    ...schedules[schedIdx],
+    lastRun: timestamp,
+    lastStatus: runStatus,
+    nextRun: getNextRun(schedules[schedIdx].cronExpression),
+  }
+  await writeSchedulesFile(schedules)
+}
+
 async function runScheduledBackup(config: RsyncConfig): Promise<void> {
   const startTime = Date.now()
   console.log(`[Scheduled Backup ${config.backupName}] Started`)
 
-  // Validate first — scheduled backups may fire when USB is unmounted
-  const validation = validatePaths(config.sourceDir, config.destDir)
-  if (!validation.valid) {
-    console.error(`[Scheduled Backup ${config.backupName}] Validation failed:`, validation.errors)
-    appendHistory({
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-      backupName: config.backupName,
-      sourceDir: config.sourceDir,
-      destDir: config.destDir,
-      status: 'error',
-      message: validation.errors.join('; '),
-      timestamp: new Date().toISOString(),
-      filesChanged: 0,
-      bytesTransferred: 0,
-      duration: Date.now() - startTime,
-    })
-    notifyRenderer('backup:scheduled-result', {
-      backupName: config.backupName,
-      status: 'error',
-      message: validation.errors.join('; '),
-    })
+  if (!tryAcquireRun(config.backupName, 'scheduled')) {
+    console.warn(`[Scheduled Backup ${config.backupName}] Skipped — backup already running`)
     return
   }
 
-  const args = buildRsyncArgs(config)
-  const rsyncCommand = `rsync ${args.join(' ')}`
-  console.log(`[Scheduled Backup ${config.backupName}] Running: ${rsyncCommand}`)
-
-  return new Promise<void>((resolve) => {
-    const proc = spawn('rsync', args, { stdio: ['ignore', 'pipe', 'pipe'] })
-
-    let stdoutBuffer = ''
-    let stderrBuffer = ''
-    let lastFilename: string | null = null
-
-    proc.stdout!.setEncoding('utf-8')
-    proc.stdout!.on('data', (chunk: string) => {
-      stdoutBuffer += chunk
-      const lines = stdoutBuffer.split('\n')
-      stdoutBuffer = lines.pop() ?? ''
-      for (const line of lines) {
-        const filename = trackFilename(line)
-        if (filename) lastFilename = filename
-        const progress = parseLine(line, lastFilename)
-        if (progress) {
-          notifyRenderer('backup:progress', { ...progress, scheduled: true })
-        }
-      }
-    })
-
-    proc.stderr!.setEncoding('utf-8')
-    proc.stderr!.on('data', (chunk: string) => {
-      stderrBuffer += chunk
-    })
-
-    proc.on('close', (exitCode) => {
-      const duration = Date.now() - startTime
+  try {
+    const validation = validatePaths(config.sourceDir, config.destDir)
+    if (!validation.valid) {
+      const message = validation.errors.join('; ')
+      console.error(`[Scheduled Backup ${config.backupName}] Validation failed:`, validation.errors)
       const timestamp = new Date().toISOString()
-      const fullOutput = stdoutBuffer + '\n' + stderrBuffer
-      const runStatus: 'complete' | 'error' = exitCode === 0 ? 'complete' : 'error'
-
-      console.log(`[Scheduled Backup ${config.backupName}] rsync exited with code ${exitCode} after ${duration}ms`)
-
-      // Update schedule record with lastRun / lastStatus / nextRun
-      const schedules = readSchedules()
-      const schedIdx = schedules.findIndex((s) => s.backupName === config.backupName)
-      if (schedIdx !== -1) {
-        schedules[schedIdx] = {
-          ...schedules[schedIdx],
-          lastRun: timestamp,
-          lastStatus: runStatus,
-          nextRun: getNextRun(schedules[schedIdx].cronExpression),
-        }
-        writeSchedules(schedules)
-      }
-
-      if (exitCode === 0) {
-        const stats = parseStats(fullOutput)
-        const record = {
-          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-          backupName: config.backupName,
-          sourceDir: config.sourceDir,
-          destDir: config.destDir,
-          status: 'complete',
-          message: 'Scheduled backup completed successfully',
-          timestamp,
-          filesChanged: stats.filesChanged,
-          bytesTransferred: stats.bytesTransferred,
-          duration,
-        }
-        appendHistory(record)
-        notifyRenderer('backup:scheduled-result', {
-          backupName: config.backupName,
-          status: 'complete',
-          filesChanged: stats.filesChanged,
-        })
-      } else {
-        const record = {
-          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-          backupName: config.backupName,
-          sourceDir: config.sourceDir,
-          destDir: config.destDir,
-          status: 'error',
-          message: stderrBuffer.trim() || `rsync exited with code ${exitCode}`,
-          timestamp,
-          filesChanged: 0,
-          bytesTransferred: 0,
-          duration,
-        }
-        appendHistory(record)
-        notifyRenderer('backup:scheduled-result', {
-          backupName: config.backupName,
-          status: 'error',
-          message: record.message,
-        })
-      }
-      resolve()
-    })
-
-    proc.on('error', (err) => {
-      const errorMsg = err.message.includes('ENOENT')
-        ? 'rsync is not installed or not found in PATH'
-        : err.message
-      console.error(`[Scheduled Backup ${config.backupName}] rsync error:`, errorMsg)
-      const record = {
+      await appendHistory({
         id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         backupName: config.backupName,
         sourceDir: config.sourceDir,
         destDir: config.destDir,
         status: 'error',
-        message: errorMsg,
-        timestamp: new Date().toISOString(),
+        message,
+        timestamp,
         filesChanged: 0,
         bytesTransferred: 0,
         duration: Date.now() - startTime,
-      }
-      appendHistory(record)
-      resolve()
+      })
+      await updateScheduleAfterRun(config.backupName, timestamp, 'error')
+      notifyRenderer('backup:scheduled-result', {
+        backupName: config.backupName,
+        status: 'error',
+        message,
+      })
+      return
+    }
+
+    const proc = spawnRsyncProcess({
+      config,
+      onProgress: (progress) => {
+        notifyRenderer('backup:progress', { ...progress, scheduled: true })
+      },
     })
+
+    const result = await attachRsyncListeners(proc, { config })
+    const duration = Date.now() - startTime
+    const timestamp = new Date().toISOString()
+
+    if (result.exitCode === null && result.stderr.includes('rsync is not installed')) {
+      await handleScheduledError(config, result.stderr, startTime, timestamp)
+      return
+    }
+
+    const runStatus: 'complete' | 'error' = result.exitCode === 0 ? 'complete' : 'error'
+    await updateScheduleAfterRun(config.backupName, timestamp, runStatus)
+
+    if (result.exitCode === 0) {
+      const record = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        backupName: config.backupName,
+        sourceDir: config.sourceDir,
+        destDir: config.destDir,
+        status: 'complete' as const,
+        message: 'Scheduled backup completed successfully',
+        timestamp,
+        filesChanged: result.stats.filesChanged,
+        bytesTransferred: result.stats.bytesTransferred,
+        duration,
+      }
+      await appendHistory(record)
+      notifyRenderer('backup:scheduled-result', {
+        backupName: config.backupName,
+        status: 'complete',
+        filesChanged: result.stats.filesChanged,
+      })
+    } else {
+      const message = result.stderr.trim() || `rsync exited with code ${result.exitCode}`
+      await handleScheduledError(config, message, startTime, timestamp)
+    }
+  } finally {
+    releaseRun(config.backupName)
+  }
+}
+
+async function handleScheduledError(
+  config: RsyncConfig,
+  message: string,
+  startTime: number,
+  timestamp: string
+): Promise<void> {
+  console.error(`[Scheduled Backup ${config.backupName}] Error:`, message)
+  await appendHistory({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    backupName: config.backupName,
+    sourceDir: config.sourceDir,
+    destDir: config.destDir,
+    status: 'error',
+    message,
+    timestamp,
+    filesChanged: 0,
+    bytesTransferred: 0,
+    duration: Date.now() - startTime,
+  })
+  await updateScheduleAfterRun(config.backupName, timestamp, 'error')
+  notifyRenderer('backup:scheduled-result', {
+    backupName: config.backupName,
+    status: 'error',
+    message,
   })
 }
 

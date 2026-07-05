@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
+        node-version: [22.x]
 
     steps:
       - uses: actions/checkout@v3
@@ -43,10 +43,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Check for secrets
+      - name: Check for secrets in source
         run: |
-          if grep -r "\.env\.local\|GITHUB_TOKEN\|API_KEY" src/ .gitignore; then
-            echo "⚠️ Possible secrets found - check .gitignore"
+          if grep -rE 'GITHUB_TOKEN|API_KEY|sk-[a-zA-Z0-9]{20,}' src/ public/ 2>/dev/null; then
+            echo "Possible secrets found in source files"
             exit 1
           fi
-          echo "✓ No secrets exposed"
+          if [ -f .env.local ] || [ -f .env ]; then
+            echo "Environment files must not be committed"
+            exit 1
+          fi
+          echo "No secrets exposed in tracked source"

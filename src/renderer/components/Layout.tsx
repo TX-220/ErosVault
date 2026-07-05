@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/router'
+import { useBackupStore } from '@/lib/store'
 
 interface Props {
   children: React.ReactNode
@@ -38,6 +39,8 @@ const NAV_LINKS = [
 export function Layout({ children }: Props) {
   const { pathname } = useRouter()
   const { dark, toggle } = useTheme()
+  const scheduledNotification = useBackupStore((s) => s.scheduledNotification)
+  const clearNotification = () => useBackupStore.setState({ scheduledNotification: null })
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
@@ -93,6 +96,17 @@ export function Layout({ children }: Props) {
 
       {/* Page content */}
       <main className="max-w-4xl mx-auto px-4 py-8 space-y-4">
+        {scheduledNotification && (
+          <div className="p-4 rounded-lg border border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/30 flex items-start justify-between gap-3">
+            <p className="text-sm text-blue-900 dark:text-blue-100">{scheduledNotification}</p>
+            <button
+              onClick={clearNotification}
+              className="text-blue-600 dark:text-blue-300 hover:text-blue-800 dark:hover:text-blue-100 text-sm shrink-0"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
         {children}
       </main>
     </div>

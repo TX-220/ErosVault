@@ -2,9 +2,14 @@ import { app, BrowserWindow } from 'electron'
 import path from 'path'
 import serve from 'electron-serve'
 import { registerIpcHandlers } from './ipc'
-import { stopAllSchedules } from './scheduler'
+import { stopAllSchedules, restoreSchedulesOnStartup } from './scheduler'
 
 const isDev = !app.isPackaged
+
+// Linux installs often lack setuid chrome-sandbox (4755). Without this, Electron aborts before our window opens.
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('no-sandbox')
+}
 
 const loadURL = isDev ? undefined : serve({ directory: path.join(__dirname, '../out') })
 
@@ -18,13 +23,17 @@ function createWindow(): BrowserWindow {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      // Linux dev boxes often lack setuid chrome-sandbox (mode 4755).
+      // contextIsolation + preload still isolate the renderer.
       sandbox: false,
     },
   })
 
   if (isDev) {
     win.loadURL('http://localhost:3002')
-    win.webContents.openDevTools()
+    if (process.env.REPLICANT_DEVTOOLS === '1') {
+      win.webContents.openDevTools()
+    }
   } else {
     loadURL!(win)
   }
@@ -34,6 +43,7 @@ function createWindow(): BrowserWindow {
 
 app.whenReady().then(() => {
   registerIpcHandlers()
+  restoreSchedulesOnStartup()
   mainWindow = createWindow()
 
   app.on('activate', () => {

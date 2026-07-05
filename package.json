@@ -2,13 +2,16 @@
   "name": "backup-app",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "main": "dist-electron/main/main.js",
   "scripts": {
-    "dev": "concurrently -n NEXT,ELECTRON -c cyan,yellow \"next dev -p 3002\" \"wait-on http://localhost:3002 && electron .\"",
+    "dev": "pnpm run build:electron && concurrently -n TSC,NEXT,ELECTRON -c magenta,cyan,yellow \"tsc -p tsconfig.electron.json --watch --preserveWatchOutput\" \"next dev -p 3002\" \"wait-on http://localhost:3002 dist-electron/main/main.js && electron . --no-sandbox\"",
     "build": "tsc -p tsconfig.electron.json && next build",
     "build:electron": "tsc -p tsconfig.electron.json",
     "dist": "npm run build && electron-builder",
-    "start": "electron .",
+    "start": "electron . --no-sandbox",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit"
   },
   "dependencies": {
@@ -27,7 +30,7 @@
     "@types/react-dom": "^18",
     "autoprefixer": "^10.4.27",
     "concurrently": "^9.2.1",
-    "electron": "^41.2.0",
+    "electron": "^41.7.2",
     "electron-builder": "^26.8.1",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.4.19",
