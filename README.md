@@ -16,6 +16,18 @@ Local clone path may still be `~/projects/replicant` on some machines (systemd /
 
 ---
 
+## Screenshots
+
+| Dashboard | Configure |
+|:---------:|:---------:|
+| ![Dashboard](docs/screenshots/01-dashboard.png) | ![Configure](docs/screenshots/02-configure.png) |
+
+| Schedules | History |
+|:---------:|:-------:|
+| ![Schedules](docs/screenshots/03-schedules.png) | ![History](docs/screenshots/04-history.png) |
+
+---
+
 ## What it is
 
 ErosVault is a **cosmic empress-themed** Electron + Next.js app that runs **incremental rsync** backups with:
@@ -74,9 +86,10 @@ pnpm dist
 ### Launch (if installed on PATH)
 
 ```bash
-replicant    # legacy launcher name still OK
-# optional alias: erosvault
+erosvault
 ```
+
+Legacy launcher name `replicant` still works if your install kept that binary.
 
 ---
 
@@ -143,9 +156,10 @@ pnpm dist
 
 ## Author
 
-TX-220 — Concept, design, direction.  
-Claude (Anthropic) — Implementation.  
-[Claude Code](https://claude.com/claude-code) & [Grok](https://x.ai) — Development and debug.
+**TX-220** — Concept, design, product direction, and Empress Edition renewal.  
+**Grok ([xAI](https://x.ai))** / **Lewd Saint Sisters** — Implementation, debugging, and ongoing maintenance of the current build.
+
+Early scaffolding used an automated coding assistant; the public **COSMIC BACKUP · EMPRESS EDITION** product is maintained under TX-220 + Grok.
 
 ## License
 
