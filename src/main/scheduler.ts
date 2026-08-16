@@ -1,9 +1,12 @@
+import fs from 'fs'
+import path from 'path'
 import cron, { ScheduledTask } from 'node-cron'
 import { CronExpressionParser } from 'cron-parser'
 import { BrowserWindow } from 'electron'
 import type { RsyncConfig, ScheduleRecord } from '../renderer/lib/types'
 import { validatePaths } from '../utils/rsync'
 import {
+  DATA_DIR,
   appendHistory,
   readSchedulesFile,
   writeSchedulesFile,
@@ -13,6 +16,20 @@ import { tryAcquireRun, releaseRun } from './run-registry'
 import { spawnRsyncProcess, attachRsyncListeners } from './rsync-process'
 
 const activeTasks = new Map<string, ScheduledTask>()
+const DAEMON_PID_FILE = path.join(DATA_DIR, 'scheduler.pid')
+
+/** True when headless systemd daemon owns cron (avoid double fire with GUI). */
+export function isExternalSchedulerActive(): boolean {
+  try {
+    if (!fs.existsSync(DAEMON_PID_FILE)) return false
+    const pid = parseInt(fs.readFileSync(DAEMON_PID_FILE, 'utf-8').trim(), 10)
+    if (!Number.isFinite(pid) || pid <= 0) return false
+    process.kill(pid, 0)
+    return true
+  } catch {
+    return false
+  }
+}
 
 function readSchedules(): ScheduleRecord[] {
   return readSchedulesFile<ScheduleRecord>()
@@ -45,6 +62,12 @@ function registerCronTask(backupName: string, cronExpression: string, backupConf
 }
 
 export function restoreSchedulesOnStartup(): void {
+  if (isExternalSchedulerActive()) {
+    console.log(
+      '[scheduler] Headless daemon is active — GUI will not register cron (config/history still available)'
+    )
+    return
+  }
   const schedules = readSchedules()
   for (const record of schedules) {
     if (record.enabled && cron.validate(record.cronExpression)) {
@@ -103,7 +126,10 @@ export function setSchedule(req: ScheduleRequest): ScheduleResponse {
     }
   }
 
-  registerCronTask(scheduleId, req.cronExpression, req.backupConfig)
+  // When headless daemon owns cron, only persist; daemon reloads schedules.json.
+  if (!isExternalSchedulerActive()) {
+    registerCronTask(scheduleId, req.cronExpression, req.backupConfig)
+  }
 
   const nextRun = getNextRun(req.cronExpression)
   const now = new Date().toISOString()
@@ -172,7 +198,9 @@ export function updateSchedule(
   let nextRun: string | undefined
   if (enabled) {
     if (!cron.validate(cronExpr)) return null
-    registerCronTask(existing.backupName, cronExpr, backupConfig)
+    if (!isExternalSchedulerActive()) {
+      registerCronTask(existing.backupName, cronExpr, backupConfig)
+    }
     nextRun = getNextRun(cronExpr)
   }
 

@@ -38,17 +38,17 @@ export default function SchedulesPage() {
 
   return (
     <Layout>
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+      <div className="ev-panel">
+        <div className="px-6 py-4 border-b border-nebula-600/20 flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Schedules</h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              Manage automated backup schedules
+            <h2 className="ev-title text-lg">Schedules</h2>
+            <p className="text-sm ev-muted mt-0.5">
+              Automated backup schedules (P0 + custom)
             </p>
           </div>
           <button
             onClick={() => loadSchedules()}
-            className="p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            className="p-2 rounded-lg text-nebula-400 hover:text-rose-soft hover:bg-void-700/60 transition"
             title="Refresh"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,7 +68,6 @@ export default function SchedulesPage() {
         </div>
       </div>
 
-      {/* Edit modal */}
       {editingSchedule && (
         <ScheduleModal
           schedule={editingSchedule}
@@ -77,26 +76,20 @@ export default function SchedulesPage() {
         />
       )}
 
-      {/* Delete confirmation */}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-sm mx-4 p-6 space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Delete Schedule
-            </h3>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="ev-panel max-w-sm mx-4 p-6 space-y-4 shadow-glow">
+            <h3 className="ev-title text-lg">Delete Schedule</h3>
+            <p className="text-sm text-nebula-300">
               Are you sure you want to delete this schedule? This cannot be undone.
             </p>
             <div className="flex justify-end gap-3">
-              <button
-                onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-              >
+              <button onClick={() => setDeleteConfirm(null)} className="ev-btn-secondary">
                 Cancel
               </button>
               <button
                 onClick={confirmDelete}
-                className="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition"
+                className="px-4 py-2 rounded-lg text-sm font-medium bg-red-600/90 text-white hover:bg-red-500 transition"
               >
                 Delete
               </button>

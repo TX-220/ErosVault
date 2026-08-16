@@ -56,7 +56,6 @@ export function ScheduleModal({ schedule, onClose, onSaved }: Props) {
     }
   }
 
-  // Close on Escape
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -66,37 +65,35 @@ export function ScheduleModal({ schedule, onClose, onSaved }: Props) {
   }, [onClose])
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl w-full max-w-md mx-4 p-6 space-y-5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+      <div className="ev-panel w-full max-w-md mx-4 p-6 space-y-5 shadow-glow">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Edit Schedule — {schedule.backupName}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
+          <h2 className="ev-title text-lg">Edit Schedule — {schedule.backupName}</h2>
+          <button onClick={onClose} className="text-nebula-400 hover:text-rose-soft transition">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        {/* Frequency */}
         <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-            Frequency
-          </label>
+          <label className="ev-label">Frequency</label>
           <div className="grid grid-cols-4 gap-2">
             {(['daily', 'weekly', 'monthly', 'custom'] as ScheduleFrequency[]).map((f) => (
               <button
                 key={f}
+                type="button"
                 onClick={() => setFrequency(f)}
                 className={`py-2 px-3 rounded-lg text-sm font-medium capitalize transition border ${
                   frequency === f
-                    ? 'bg-blue-500 border-blue-500 text-white'
-                    : 'border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-blue-400'
+                    ? 'border-transparent text-white'
+                    : 'border-nebula-600/30 text-nebula-300 hover:border-rose-glow/40'
                 }`}
+                style={
+                  frequency === f
+                    ? { background: 'linear-gradient(135deg, #a855f7, #db2777)' }
+                    : undefined
+                }
               >
                 {f}
               </button>
@@ -104,80 +101,61 @@ export function ScheduleModal({ schedule, onClose, onSaved }: Props) {
           </div>
         </div>
 
-        {/* Time (daily/weekly/monthly) */}
         {frequency !== 'custom' && (
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Time
-            </label>
+            <label className="ev-label">Time</label>
             <input
               type="time"
               value={time}
               onChange={(e) => setTime(e.target.value)}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="ev-input"
             />
           </div>
         )}
 
-        {/* Day of week (weekly only) */}
         {frequency === 'weekly' && (
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Day of Week
-            </label>
+            <label className="ev-label">Day of Week</label>
             <select
               value={dayOfWeek}
               onChange={(e) => setDayOfWeek(Number(e.target.value))}
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="ev-input"
             >
               {DAYS.map((day, idx) => (
-                <option key={day} value={idx}>{day}</option>
+                <option key={day} value={idx}>
+                  {day}
+                </option>
               ))}
             </select>
           </div>
         )}
 
-        {/* Custom cron */}
         {frequency === 'custom' && (
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-              Cron Expression
-            </label>
+            <label className="ev-label">Cron Expression</label>
             <input
               type="text"
               value={customCron}
               onChange={(e) => setCustomCron(e.target.value)}
               placeholder="0 2 * * *"
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 font-mono bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="ev-input font-mono"
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Format: minute hour day-of-month month day-of-week
-            </p>
+            <p className="text-xs ev-muted">Format: minute hour day-of-month month day-of-week</p>
           </div>
         )}
 
-        {/* Preview */}
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg px-4 py-3 text-sm">
-          <span className="text-gray-500 dark:text-gray-400">Cron: </span>
-          <span className="font-mono text-blue-600 dark:text-blue-400">{cronExpression}</span>
+        <div className="rounded-lg px-4 py-3 text-sm bg-void-950/70 border border-nebula-600/15">
+          <span className="ev-muted">Cron: </span>
+          <span className="font-mono text-rose-glow">{cronExpression}</span>
         </div>
 
-        {error && (
-          <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-        )}
+        {error && <p className="text-sm text-red-400">{error}</p>}
 
         <div className="flex justify-end gap-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
-          >
+          <button type="button" onClick={onClose} className="ev-btn-secondary">
             Cancel
           </button>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="px-4 py-2 rounded-lg text-sm font-medium bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-50 transition"
-          >
+          <button type="button" onClick={handleSave} disabled={saving} className="ev-btn-primary">
             {saving ? 'Saving…' : 'Save'}
           </button>
         </div>

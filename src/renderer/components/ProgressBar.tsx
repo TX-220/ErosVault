@@ -15,9 +15,9 @@ export function ProgressBar({ progress, isRunning, onCancel }: Props) {
   const isSyncing = progress?.status === 'syncing'
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+    <div className="ev-panel p-6 shadow-glow-sm">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-gray-900 dark:text-white">
+        <h3 className="ev-title">
           {isComplete
             ? 'Backup Complete'
             : isError
@@ -31,53 +31,57 @@ export function ProgressBar({ progress, isRunning, onCancel }: Props) {
         {isRunning && (
           <button
             onClick={onCancel}
-            className="text-sm text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 font-medium transition"
+            className="text-sm text-red-400 hover:text-red-300 font-medium transition"
           >
             Stop Backup
           </button>
         )}
       </div>
 
-      {/* Progress bar */}
-      <div className="w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden mb-4">
+      <div className="w-full h-3 rounded-full overflow-hidden mb-4 bg-void-950/80 border border-nebula-600/20">
         {isSyncing ? (
-          <div className="h-full bg-blue-500 rounded-full animate-pulse w-full" />
+          <div
+            className="h-full rounded-full animate-pulse w-full"
+            style={{ background: 'linear-gradient(90deg, #a855f7, #f472b6, #a855f7)' }}
+          />
         ) : isComplete ? (
-          <div className="h-full bg-green-500 rounded-full w-full" />
+          <div className="h-full bg-emerald-500 rounded-full w-full" />
         ) : isError ? (
           <div className="h-full bg-red-500 rounded-full w-full" />
         ) : isCancelled ? (
-          <div className="h-full bg-yellow-500 rounded-full w-full" />
+          <div className="h-full bg-amber-500 rounded-full w-full" />
         ) : (
-          <div className="h-full bg-blue-400 rounded-full animate-pulse w-1/3" />
+          <div
+            className="h-full rounded-full animate-pulse w-1/3"
+            style={{ background: 'linear-gradient(90deg, #7c3aed, #db2777)' }}
+          />
         )}
       </div>
 
-      {/* Stats row */}
       {isSyncing && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
           {progress.filesTransferred !== undefined && (
             <div>
-              <p className="text-gray-500 dark:text-gray-400 text-xs">Files Transferred</p>
-              <p className="font-medium text-gray-900 dark:text-white">{progress.filesTransferred}</p>
+              <p className="ev-muted text-xs">Files Transferred</p>
+              <p className="font-medium text-white">{progress.filesTransferred}</p>
             </div>
           )}
           {progress.speed && (
             <div>
-              <p className="text-gray-500 dark:text-gray-400 text-xs">Speed</p>
-              <p className="font-medium text-gray-900 dark:text-white">{progress.speed}</p>
+              <p className="ev-muted text-xs">Speed</p>
+              <p className="font-medium text-white">{progress.speed}</p>
             </div>
           )}
           {progress.eta && (
             <div>
-              <p className="text-gray-500 dark:text-gray-400 text-xs">ETA</p>
-              <p className="font-medium text-gray-900 dark:text-white">{progress.eta}</p>
+              <p className="ev-muted text-xs">ETA</p>
+              <p className="font-medium text-white">{progress.eta}</p>
             </div>
           )}
           {progress.currentFile && (
             <div className="col-span-2 sm:col-span-1">
-              <p className="text-gray-500 dark:text-gray-400 text-xs">Current File</p>
-              <p className="font-medium text-gray-900 dark:text-white truncate text-xs" title={progress.currentFile}>
+              <p className="ev-muted text-xs">Current File</p>
+              <p className="font-medium text-white truncate text-xs" title={progress.currentFile}>
                 {progress.currentFile}
               </p>
             </div>
@@ -85,15 +89,16 @@ export function ProgressBar({ progress, isRunning, onCancel }: Props) {
         </div>
       )}
 
-      {/* Status message */}
       {progress?.message && (
-        <p className={`mt-3 text-sm ${
-          isError
-            ? 'text-red-600 dark:text-red-400'
-            : isComplete
-            ? 'text-green-600 dark:text-green-400'
-            : 'text-gray-600 dark:text-gray-400'
-        }`}>
+        <p
+          className={`mt-3 text-sm ${
+            isError
+              ? 'text-red-400'
+              : isComplete
+              ? 'text-emerald-400'
+              : 'ev-muted'
+          }`}
+        >
           {progress.message}
         </p>
       )}

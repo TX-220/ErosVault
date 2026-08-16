@@ -12,7 +12,6 @@ export default function Configure() {
 
   useEffect(() => {
     setMounted(true)
-    // Check if running in Electron (has window.electronAPI)
     const hasElectronAPI = typeof window !== 'undefined' && (window as any).electronAPI !== undefined
     setIsElectron(hasElectronAPI)
   }, [])
@@ -31,13 +30,14 @@ export default function Configure() {
   return (
     <Layout>
       {!isElectron && (
-        <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 rounded-lg">
+        <div className="ev-panel p-4 border-amber-500/30">
           <div className="flex gap-3">
-            <div className="text-2xl">⚠️</div>
+            <div className="text-2xl" aria-hidden>⚠</div>
             <div>
-              <p className="font-semibold text-amber-900 dark:text-amber-100">Browser Mode - Limited Functionality</p>
-              <p className="text-sm text-amber-800 dark:text-amber-200 mt-1">
-                Backup execution is only available in the desktop application. Please download and run the Replicant desktop app to perform backups.
+              <p className="font-semibold text-amber-200">Browser Mode — Limited Functionality</p>
+              <p className="text-sm text-amber-100/80 mt-1">
+                Backup execution is only available in the desktop application. Launch the ErosVault
+                desktop app to perform backups.
               </p>
             </div>
           </div>
@@ -46,10 +46,9 @@ export default function Configure() {
 
       <ProgressBar progress={progress} isRunning={isRunning} onCancel={cancelBackup} />
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-6">
-          Backup Configuration
-        </h2>
+      <div className="ev-panel p-6">
+        <h2 className="ev-title text-lg mb-1">Backup Configuration</h2>
+        <p className="ev-muted text-sm mb-6">Source, destination, exclusions, and schedule for this vault job.</p>
         <BackupForm
           initialConfig={config}
           isRunning={isRunning}

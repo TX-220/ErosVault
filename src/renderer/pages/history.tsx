@@ -16,10 +16,13 @@ export default function History() {
 
   return (
     <Layout>
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-        <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Backup History</h2>
-          <span className="text-sm text-gray-500 dark:text-gray-400">{history.length} records</span>
+      <div className="ev-panel overflow-hidden">
+        <div className="p-6 border-b border-nebula-600/20 flex items-center justify-between">
+          <div>
+            <h2 className="ev-title text-lg">Backup History</h2>
+            <p className="ev-muted text-sm mt-0.5">Audit trail of vault runs</p>
+          </div>
+          <span className="ev-badge-muted">{history.length} records</span>
         </div>
         <HistoryTable history={history} />
       </div>

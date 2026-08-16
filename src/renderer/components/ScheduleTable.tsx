@@ -32,7 +32,7 @@ function frequencyLabel(schedule: ScheduleRecord): string {
 export function ScheduleTable({ schedules, onToggle, onDelete, onEdit }: Props) {
   if (schedules.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+      <div className="text-center py-12 ev-muted">
         No schedules configured yet. Configure a backup with a schedule to see it here.
       </div>
     )
@@ -42,60 +42,41 @@ export function ScheduleTable({ schedules, onToggle, onDelete, onEdit }: Props) 
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-gray-200 dark:border-gray-700 text-left text-gray-500 dark:text-gray-400">
-            <th className="py-3 pr-4 font-medium">Backup</th>
-            <th className="py-3 pr-4 font-medium">Frequency</th>
-            <th className="py-3 pr-4 font-medium">Last Run</th>
-            <th className="py-3 pr-4 font-medium">Next Run</th>
-            <th className="py-3 pr-4 font-medium">Status</th>
-            <th className="py-3 font-medium">Actions</th>
+          <tr className="border-b border-nebula-600/20 text-left">
+            <th className="py-3 pr-4 ev-table-head">Backup</th>
+            <th className="py-3 pr-4 ev-table-head">Frequency</th>
+            <th className="py-3 pr-4 ev-table-head">Last Run</th>
+            <th className="py-3 pr-4 ev-table-head">Next Run</th>
+            <th className="py-3 pr-4 ev-table-head">Status</th>
+            <th className="py-3 ev-table-head">Actions</th>
           </tr>
         </thead>
         <tbody>
           {schedules.map((sched) => (
             <tr
               key={sched.id}
-              className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50"
+              className="border-b border-nebula-600/10 hover:bg-nebula-600/5 transition"
             >
-              <td className="py-3 pr-4 font-medium text-gray-900 dark:text-white">
-                {sched.backupName}
-              </td>
-              <td className="py-3 pr-4 text-gray-600 dark:text-gray-300">
-                {frequencyLabel(sched)}
-              </td>
-              <td className="py-3 pr-4 text-gray-500 dark:text-gray-400">
-                {formatDate(sched.lastRun)}
-              </td>
-              <td className="py-3 pr-4 text-gray-500 dark:text-gray-400">
+              <td className="py-3 pr-4 font-medium text-white">{sched.backupName}</td>
+              <td className="py-3 pr-4 text-nebula-300">{frequencyLabel(sched)}</td>
+              <td className="py-3 pr-4 ev-muted">{formatDate(sched.lastRun)}</td>
+              <td className="py-3 pr-4 ev-muted">
                 {sched.enabled ? formatDate(sched.nextRun) : '—'}
               </td>
               <td className="py-3 pr-4">
-                {sched.lastStatus === 'complete' && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                    Success
-                  </span>
-                )}
-                {sched.lastStatus === 'error' && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
-                    Error
-                  </span>
-                )}
-                {!sched.lastStatus && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400">
-                    Never run
-                  </span>
-                )}
+                {sched.lastStatus === 'complete' && <span className="ev-badge-ok">Success</span>}
+                {sched.lastStatus === 'error' && <span className="ev-badge-err">Error</span>}
+                {!sched.lastStatus && <span className="ev-badge-muted">Never run</span>}
               </td>
               <td className="py-3">
                 <div className="flex items-center gap-2">
-                  {/* Enable/disable toggle */}
                   <button
                     onClick={() => onToggle(sched.id, !sched.enabled)}
                     title={sched.enabled ? 'Disable schedule' : 'Enable schedule'}
                     className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors focus:outline-none ${
                       sched.enabled
-                        ? 'bg-blue-500'
-                        : 'bg-gray-300 dark:bg-gray-600'
+                        ? 'bg-gradient-to-r from-nebula-600 to-rose-deep'
+                        : 'bg-void-600'
                     }`}
                   >
                     <span
@@ -105,11 +86,10 @@ export function ScheduleTable({ schedules, onToggle, onDelete, onEdit }: Props) 
                     />
                   </button>
 
-                  {/* Edit */}
                   <button
                     onClick={() => onEdit(sched)}
                     title="Edit schedule"
-                    className="p-1 rounded text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition"
+                    className="p-1 rounded text-nebula-400 hover:text-rose-glow transition"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -117,11 +97,10 @@ export function ScheduleTable({ schedules, onToggle, onDelete, onEdit }: Props) 
                     </svg>
                   </button>
 
-                  {/* Delete */}
                   <button
                     onClick={() => onDelete(sched.id)}
                     title="Delete schedule"
-                    className="p-1 rounded text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition"
+                    className="p-1 rounded text-nebula-400 hover:text-red-400 transition"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}

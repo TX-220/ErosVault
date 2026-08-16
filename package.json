@@ -1,6 +1,6 @@
 {
-  "name": "backup-app",
-  "version": "0.1.0",
+  "name": "erosvault",
+  "version": "0.2.0",
   "private": true,
   "engines": {
     "node": ">=22.12.0"
@@ -12,6 +12,7 @@
     "build:electron": "tsc -p tsconfig.electron.json",
     "dist": "npm run build && electron-builder",
     "start": "electron . --no-sandbox",
+    "scheduler": "node dist-electron/headless/daemon.js",
     "typecheck": "tsc --noEmit && tsc -p tsconfig.electron.json --noEmit"
   },
   "dependencies": {
@@ -38,8 +39,8 @@
     "wait-on": "^9.0.4"
   },
   "build": {
-    "appId": "com.backup-app.desktop",
-    "productName": "Backup App",
+    "appId": "com.erosvault.desktop",
+    "productName": "ErosVault",
     "files": [
       "dist-electron/**/*",
       "out/**/*"

@@ -11,6 +11,11 @@
     "skipLibCheck": true,
     "sourceMap": true
   },
-  "include": ["src/main/**/*.ts", "src/utils/**/*.ts", "src/shared/**/*.ts"],
+  "include": [
+    "src/main/**/*.ts",
+    "src/utils/**/*.ts",
+    "src/shared/**/*.ts",
+    "src/headless/**/*.ts"
+  ],
   "exclude": ["node_modules", "src/renderer"]
 }

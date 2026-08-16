@@ -19,6 +19,8 @@ function createWindow(): BrowserWindow {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
+    title: 'ErosVault',
+    backgroundColor: '#0a0612',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -29,9 +31,11 @@ function createWindow(): BrowserWindow {
     },
   })
 
+  win.setTitle('ErosVault')
+
   if (isDev) {
     win.loadURL('http://localhost:3002')
-    if (process.env.REPLICANT_DEVTOOLS === '1') {
+    if (process.env.REPLICANT_DEVTOOLS === '1' || process.env.EROSVAULT_DEVTOOLS === '1') {
       win.webContents.openDevTools()
     }
   } else {
@@ -42,6 +46,7 @@ function createWindow(): BrowserWindow {
 }
 
 app.whenReady().then(() => {
+  app.setName('ErosVault')
   registerIpcHandlers()
   restoreSchedulesOnStartup()
   mainWindow = createWindow()

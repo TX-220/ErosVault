@@ -105,33 +105,22 @@ export function BackupForm({ initialConfig, isRunning, onSave, onExecute, isElec
 
   const isValid = formData.backupName && formData.sourceDir && formData.destDir
 
-  const inputCls =
-    'w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm ' +
-    'bg-white dark:bg-gray-700 text-gray-900 dark:text-white ' +
-    'focus:outline-none focus:ring-2 focus:ring-blue-500'
-
   return (
     <form onSubmit={handleSave} className="space-y-5">
-      {/* Backup Name */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Backup Name
-        </label>
+        <label className="ev-label">Backup Name</label>
         <input
           type="text"
           value={formData.backupName}
           onChange={(e) => setFormData({ ...formData, backupName: e.target.value })}
           placeholder="e.g. Trading Bot Backup"
           required
-          className={inputCls}
+          className="ev-input"
         />
       </div>
 
-      {/* Source */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Source Directory
-        </label>
+        <label className="ev-label">Source Directory</label>
         <input
           type="text"
           value={formData.sourceDir}
@@ -141,15 +130,12 @@ export function BackupForm({ initialConfig, isRunning, onSave, onExecute, isElec
           }}
           placeholder="/home/user/project"
           required
-          className={`${inputCls} font-mono text-sm`}
+          className="ev-input font-mono"
         />
       </div>
 
-      {/* Destination */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-          Destination Directory
-        </label>
+        <label className="ev-label">Destination Directory</label>
         <input
           type="text"
           value={formData.destDir}
@@ -159,74 +145,63 @@ export function BackupForm({ initialConfig, isRunning, onSave, onExecute, isElec
           }}
           placeholder="/mnt/backup"
           required
-          className={`${inputCls} font-mono text-sm`}
+          className="ev-input font-mono"
         />
       </div>
 
-      {/* Exclude Patterns */}
       <div className="space-y-3">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Exclusion Patterns
-          </label>
+          <label className="ev-label">Exclusion Patterns</label>
 
-          {/* Default exclusions (read-only) */}
           <div className="mb-3">
-            <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-              🔒 Always Excluded (default):
+            <p className="text-xs font-medium text-nebula-400 mb-2">
+              Always Excluded (default):
             </p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {DEFAULT_EXCLUSIONS.map((pattern: string) => (
                 <div
                   key={pattern}
-                  className="px-3 py-2 bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded text-sm"
+                  className="px-3 py-2 rounded-lg text-sm border border-nebula-600/15 bg-void-950/50"
                 >
-                  <div className="font-mono text-gray-900 dark:text-gray-100">{pattern}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                    {EXCLUSION_DESCRIPTIONS[pattern]}
-                  </div>
+                  <div className="font-mono text-nebula-300">{pattern}</div>
+                  <div className="text-xs ev-muted">{EXCLUSION_DESCRIPTIONS[pattern]}</div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Python venv note */}
-          <div className="my-3 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded text-sm">
-            <p className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-1">
-              💡 Python Virtual Environments
-            </p>
-            <p className="text-xs text-blue-800 dark:text-blue-200">
-              Virtual environments (venv, .venv, env) are excluded by default. After restoring a backup, reinstall with:<br/>
-              <code className="font-mono bg-blue-100 dark:bg-blue-800 px-1 rounded">python -m venv venv && pip install -r requirements.txt</code>
+          <div className="my-3 p-3 rounded-lg text-sm border border-nebula-500/25 bg-nebula-700/10">
+            <p className="text-xs font-medium text-nebula-300 mb-1">Python Virtual Environments</p>
+            <p className="text-xs text-nebula-400">
+              Virtual environments (venv, .venv, env) are excluded by default. After restoring:{' '}
+              <code className="font-mono bg-void-950/80 px-1 rounded text-rose-soft">
+                python -m venv venv && pip install -r requirements.txt
+              </code>
             </p>
           </div>
 
-          {/* Custom exclusions (editable) */}
           <div>
-            <label className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1 block">
-              ➕ Additional Custom Exclusions (comma-separated):
+            <label className="text-xs font-medium text-nebula-400 mb-1 block">
+              Additional Custom Exclusions (comma-separated):
             </label>
             <input
               type="text"
               value={excludeRaw}
               onChange={(e) => setExcludeRaw(e.target.value)}
               placeholder="e.g. .idea, .vscode, dist"
-              className={`${inputCls} font-mono text-sm`}
+              className="ev-input font-mono"
             />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              These are added to the default exclusions above
-            </p>
+            <p className="text-xs ev-muted mt-1">These are added to the default exclusions above</p>
           </div>
         </div>
       </div>
 
-      {/* Validation result */}
       {validation && (
         <div
-          className={`p-3 rounded-md text-sm ${
+          className={`p-3 rounded-lg text-sm border ${
             validation.valid
-              ? 'bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-green-800 dark:text-green-300'
-              : 'bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-800 dark:text-red-300'
+              ? 'bg-emerald-900/20 border-emerald-500/30 text-emerald-300'
+              : 'bg-red-900/20 border-red-500/30 text-red-300'
           }`}
         >
           {validation.valid ? (
@@ -241,31 +216,27 @@ export function BackupForm({ initialConfig, isRunning, onSave, onExecute, isElec
         </div>
       )}
 
-      {/* ─── Schedule section ─── */}
-      <div className="border border-gray-200 dark:border-gray-600 rounded-lg p-4 space-y-4">
+      <div className="ev-panel p-4 space-y-4 !shadow-none">
         <label className="flex items-center gap-3 cursor-pointer">
           <input
             type="checkbox"
             checked={schedule.enabled}
             onChange={(e) => updateSchedule({ enabled: e.target.checked })}
-            className="w-4 h-4 rounded text-blue-600 border-gray-300 dark:border-gray-600"
+            className="w-4 h-4 rounded border-nebula-600/40 text-rose-deep focus:ring-nebula-500 bg-void-900"
           />
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-            Enable Scheduled Backup
-          </span>
+          <span className="text-sm font-medium text-nebula-300">Enable Scheduled Backup</span>
         </label>
 
         {schedule.enabled && (
           <div className="space-y-3 pl-7">
-            {/* Frequency */}
             <div className="flex flex-wrap items-center gap-3">
-              <label className="text-sm text-gray-600 dark:text-gray-400 w-20">Frequency</label>
+              <label className="text-sm ev-muted w-20">Frequency</label>
               <select
                 value={schedule.frequency}
                 onChange={(e) =>
                   updateSchedule({ frequency: e.target.value as ScheduleConfig['frequency'] })
                 }
-                className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="ev-input !w-auto"
               >
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
@@ -273,79 +244,70 @@ export function BackupForm({ initialConfig, isRunning, onSave, onExecute, isElec
                 <option value="custom">Custom cron</option>
               </select>
 
-              {/* Time picker for daily / weekly */}
               {(schedule.frequency === 'daily' ||
                 schedule.frequency === 'weekly' ||
                 schedule.frequency === 'monthly') && (
                 <>
-                  <span className="text-sm text-gray-500 dark:text-gray-400">@</span>
+                  <span className="text-sm ev-muted">@</span>
                   <input
                     type="time"
                     value={schedule.time}
                     onChange={(e) => updateSchedule({ time: e.target.value })}
-                    className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="ev-input !w-auto"
                   />
                 </>
               )}
 
-              {/* Day picker for weekly */}
               {schedule.frequency === 'weekly' && (
                 <select
                   value={schedule.dayOfWeek}
                   onChange={(e) => updateSchedule({ dayOfWeek: parseInt(e.target.value) })}
-                  className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="ev-input !w-auto"
                 >
                   {DAY_NAMES.map((day, i) => (
-                    <option key={day} value={i}>{day}</option>
+                    <option key={day} value={i}>
+                      {day}
+                    </option>
                   ))}
                 </select>
               )}
             </div>
 
-            {/* Custom cron expression */}
             {schedule.frequency === 'custom' && (
               <div className="flex items-center gap-3">
-                <label className="text-sm text-gray-600 dark:text-gray-400 w-20">Cron</label>
+                <label className="text-sm ev-muted w-20">Cron</label>
                 <input
                   type="text"
                   value={schedule.cronExpression}
                   onChange={(e) => updateSchedule({ cronExpression: e.target.value })}
                   placeholder="0 2 * * *"
-                  className="px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-mono bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 flex-1"
+                  className="ev-input font-mono flex-1"
                 />
               </div>
             )}
 
-            {/* Computed cron preview */}
-            <p className="text-xs text-gray-400 dark:text-gray-500 font-mono">
+            <p className="text-xs text-nebula-400/70 font-mono">
               cron: {buildCronExpression(schedule)}
             </p>
 
             {scheduleSaved && (
-              <p className="text-xs text-green-600 dark:text-green-400">
-                ✓ Schedule saved and active
-              </p>
+              <p className="text-xs text-emerald-400">✓ Schedule saved and active</p>
             )}
           </div>
         )}
       </div>
 
-      {/* Action buttons */}
       <div className="flex flex-wrap gap-3 pt-2">
         <button
           type="button"
           onClick={handleValidate}
           disabled={validating || !formData.sourceDir || !formData.destDir}
-          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 transition"
+          className="ev-btn-secondary"
         >
           {validating ? 'Checking...' : 'Validate Paths'}
         </button>
 
-        <button
-          type="submit"
-          disabled={!isValid}
-          className="px-4 py-2 bg-blue-600 text-white text-sm rounded-md hover:bg-blue-700 disabled:opacity-50 transition"
-        >
+        <button type="submit" disabled={!isValid} className="ev-btn-primary">
           Save Configuration
         </button>
 
@@ -354,7 +316,7 @@ export function BackupForm({ initialConfig, isRunning, onSave, onExecute, isElec
           onClick={handleExecute}
           disabled={isRunning || !isValid || !isElectron}
           title={!isElectron ? 'Only available in desktop app' : ''}
-          className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+          className="ev-btn-success"
         >
           {isRunning ? 'Backup Running...' : 'Execute Backup Now'}
         </button>

@@ -1,16 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <!-- Dark slate background with rounded corners -->
-  <rect width="32" height="32" rx="6" fill="#1e293b"/>
-
-  <!-- Sync arrows: two curved arrows forming a cycle -->
-  <!-- Left arrow (top-left to bottom-right arc) -->
-  <g fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Top-right arrow -->
-    <path d="M 22 8 Q 26 8 26 12 L 26 16 Q 26 20 22 20 L 12 20"/>
-    <path d="M 24 18 L 26 20 L 24 22"/>
-
-    <!-- Bottom-left arrow -->
-    <path d="M 10 24 Q 6 24 6 20 L 6 16 Q 6 12 10 12 L 20 12"/>
-    <path d="M 8 14 L 6 12 L 8 10"/>
-  </g>
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7"/>
+      <stop offset="55%" stop-color="#db2777"/>
+      <stop offset="100%" stop-color="#4c1d95"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="#0a0612"/>
+  <rect x="1" y="1" width="30" height="30" rx="6" fill="none" stroke="url(#g)" stroke-width="1.2" opacity="0.9"/>
+  <!-- star / vault gem -->
+  <path d="M16 7l1.8 5.2L23 14l-5.2 1.8L16 21l-1.8-5.2L9 14l5.2-1.8L16 7z" fill="url(#g)"/>
+  <circle cx="23.5" cy="9.5" r="1.2" fill="#fbcfe8" opacity="0.85"/>
+  <circle cx="8.5" cy="22" r="0.8" fill="#e9d5ff" opacity="0.7"/>
 </svg>
