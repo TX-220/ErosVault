@@ -7,7 +7,7 @@
   },
   "main": "dist-electron/main/main.js",
   "scripts": {
-    "dev": "pnpm run build:electron && concurrently -n TSC,NEXT,ELECTRON -c magenta,cyan,yellow \"tsc -p tsconfig.electron.json --watch --preserveWatchOutput\" \"next dev -p 3002\" \"wait-on http://localhost:3002 dist-electron/main/main.js && electron . --no-sandbox\"",
+    "dev": "pnpm run build:electron && concurrently -n TSC,NEXT,ELECTRON -c magenta,cyan,yellow \"tsc -p tsconfig.electron.json --watch --preserveWatchOutput\" \"next dev -p 3002\" \"wait-on http://localhost:3002 dist-electron/main/main.js && EROSVAULT_DEV=1 electron . --no-sandbox\"",
     "build": "tsc -p tsconfig.electron.json && next build",
     "build:electron": "tsc -p tsconfig.electron.json",
     "dist": "npm run build && electron-builder",
