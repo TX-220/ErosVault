@@ -22,11 +22,14 @@ if (process.platform === 'win32') {
   app.commandLine.appendSwitch('no-sandbox')
 }
 
-/** Next.js `output: 'export'` lands in project-root `out/` (not dist-electron/out). */
+/**
+ * Next.js `output: 'export'` → project-root `out/` (NOT dist-electron/out).
+ * main.js lives at dist-electron/main/ → ../../out
+ *
+ * electron-serve MUST be constructed before app.ready (registers privileged scheme).
+ */
 function resolveOutDir(): string {
-  // app.getAppPath() = package.json root for `electron .` and asar root when packaged
   const candidates = [
-    path.join(app.getAppPath(), 'out'),
     path.join(__dirname, '..', '..', 'out'),
     path.join(process.cwd(), 'out'),
   ]
@@ -38,14 +41,12 @@ function resolveOutDir(): string {
   return candidates[0]
 }
 
-let loadStatic: ((window: BrowserWindow) => Promise<void>) | null = null
-
-function getStaticLoader(): (window: BrowserWindow) => Promise<void> {
-  if (!loadStatic) {
-    loadStatic = serve({ directory: resolveOutDir() })
-  }
-  return loadStatic
-}
+const outDir = resolveOutDir()
+// Call serve() at module load — before app.whenReady() — or electron-serve throws:
+// "protocol.registerSchemesAsPrivileged should be called before app is ready"
+const loadStatic = useDevServer
+  ? null
+  : serve({ directory: outDir })
 
 let mainWindow: BrowserWindow | null = null
 
@@ -79,10 +80,12 @@ function createWindow(): BrowserWindow {
     if (process.env.REPLICANT_DEVTOOLS === '1' || process.env.EROSVAULT_DEVTOOLS === '1') {
       win.webContents.openDevTools()
     }
-  } else {
-    const outDir = resolveOutDir()
+  } else if (loadStatic) {
     console.log('[ErosVault] loading static UI from', outDir)
-    void getStaticLoader()(win)
+    void loadStatic(win)
+  } else {
+    // Fallback: load file:// if serve was skipped
+    void win.loadFile(path.join(outDir, 'index.html'))
   }
 
   return win
