@@ -29,7 +29,8 @@ const KIOXIA_MOUNT = process.env.KIOXIA_MOUNT || '/mnt/kioxia'
 const KIOXIA_UNLOCK = path.join(HOME, 'bin', 'kioxia-unlock')
 const REFRESH_META = path.join(HOME, 'bin', 'replicant-p0-refresh-meta')
 const REFRESH_HOST_OPS = path.join(HOME, 'bin', 'erosvault-refresh-host-ops')
-const VM_GUEST_PULL = path.join(HOME, 'VMs', 'bin', 'fxgt-mt5-pull-staging')
+const VM_GUEST_PULL =
+  process.env.EROSVAULT_VM_GUEST_PULL || path.join(HOME, 'VMs', 'bin', 'vm-guest-pull-staging')
 
 const activeTasks = new Map<string, { task: ScheduledTask; fingerprint: string }>()
 let reloadTimer: NodeJS.Timeout | null = null
@@ -141,14 +142,14 @@ function maybeRefreshHomeMeta(backupName: string): void {
   }
 }
 
-/** Pull Windows guest TradeBot data into host staging before p0-vm-guest rsync. */
+/** Pull Windows guest app data into host staging before p0-vm-guest rsync. */
 function maybePullVmGuest(backupName: string): void {
   if (backupName !== 'p0-vm-guest') return
   if (!fs.existsSync(VM_GUEST_PULL)) {
     log(`vm-guest pull script missing: ${VM_GUEST_PULL} (continuing with existing staging)`)
     return
   }
-  log('Pulling fxgt-mt5 guest TradeBot → host staging')
+  log('Pulling VM guest data → host staging')
   const r = spawnSync(VM_GUEST_PULL, [], {
     encoding: 'utf-8',
     env: process.env,
