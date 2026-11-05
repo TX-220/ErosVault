@@ -156,10 +156,10 @@ pnpm dist
 
 ## Author
 
-**TX-220** — Concept, design, product direction, and Empress Edition renewal.  
+**Crimson Lab** — Concept, design, product direction, and Empress Edition renewal.  
 **Grok ([xAI](https://x.ai))** / **Lewd Saint Sisters** — Implementation, debugging, and ongoing maintenance of the current build.
 
-Early scaffolding used an automated coding assistant; the public **COSMIC BACKUP · EMPRESS EDITION** product is maintained under TX-220 + Grok.
+Early scaffolding used an automated coding assistant; the public **COSMIC BACKUP · EMPRESS EDITION** product is maintained under Crimson Lab + Grok.
 
 ## License
 
